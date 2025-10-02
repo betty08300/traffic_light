@@ -1,0 +1,45 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
+}
+
+.lightContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: black;
+  padding: 10px;
+  border-radius: 10px;
+  width: 100px;
+}
+
+.light {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: white;
+  margin: 10px auto;
+  transition: background-color 0.5s ease;
+  opacity: 0.3;
+
+  &.active {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+    opacity: 1;
+  }
+
+  &.red {
+    background-color: red;
+  }
+
+  &.yellow {
+    background-color: yellow;
+  }
+
+  &.green {
+    background-color: green;
+  }
+}
