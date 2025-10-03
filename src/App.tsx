@@ -28,8 +28,8 @@ function App() {
   };
 
   const [activeLight, setActiveLight] = useState<LightColor>("red");
-  const [activeWalk, setActiveWalk] = useState(false);
-  const [pedestrianWaiting, setPedestrianWaiting] = useState(false);
+  const [mode, setMode] = useState<"normal" | "pending" | "walking">("normal");
+  const [isBlinking, setIsBlinking] = useState(false);
   const walkTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const blinkTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const blinkIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -40,40 +40,43 @@ function App() {
   // If the light is Red: immediately start Red + Walk for 15 seconds.
 
   useEffect(() => {
-    if (pedestrianWaiting) {
+    if (mode === "walking") return;
+    if (mode === "pending") {
       if (activeLight === "red") {
         startWalking();
       } else if (activeLight === "yellow") {
         const timer = setTimeout(() => {
-          startWalking();
-        }, lights.yellow.duration);
-        return () => clearTimeout(timer);
-      } else if (activeLight === "green") {
-        const greenTimer = setTimeout(() => {
-          setActiveLight("yellow");
-        }, lights.green.duration);
+          setActiveLight("red");
+          console.log("yellow finish");
+        }, lights[activeLight].duration);
         return () => {
-          clearTimeout(greenTimer);
+          clearTimeout(timer);
+        };
+      } else if (activeLight === "green") {
+        const timer = setTimeout(() => {
+          setActiveLight("yellow");
+        }, lights[activeLight].duration);
+        return () => {
+          clearTimeout(timer);
         };
       }
     } else {
+      // normal light cycle
       const timer = setInterval(() => {
-        setActiveLight((color) => lights[color].next);
+        setActiveLight((light) => lights[light].next);
       }, lights[activeLight].duration);
-      return () => clearInterval(timer);
+
+      return () => {
+        clearInterval(timer);
+      };
     }
-  }, [pedestrianWaiting, activeLight]);
+  }, [mode, activeLight]);
 
   // for component umount
   useEffect(() => {
     return () => {
       clearAllTimers();
     };
-    // return () => {
-    //   if (walkTimerRef.current) {
-    //     clearTimeout(walkTimerRef.current);
-    //   }
-    // };
   }, []);
 
   const clearAllTimers = () => {
@@ -90,39 +93,28 @@ function App() {
   };
 
   const startWalking = () => {
-    setActiveWalk(true);
-    setActiveLight("red");
-
-    // clear all timers from previous start walking
+    setMode("walking");
+    setIsBlinking(false);
     clearAllTimers();
 
-    // stop waking after 15 seconds
-    walkTimerRef.current = setTimeout(() => {
-      setActiveWalk(false);
-      setPedestrianWaiting(false);
-      setActiveLight("green");
-      if (blinkIntervalRef.current) {
-        clearInterval(blinkIntervalRef.current);
-      }
-    }, 15000);
+    startBlinking();
 
-    blinkTimerRef.current = setTimeout(() => {
-      startBlinking();
-    }, 10000); // 10 seconds after start walking
+    walkTimerRef.current = setTimeout(() => {
+      setMode("normal");
+      setActiveLight("green");
+      setIsBlinking(false);
+      clearAllTimers();
+    }, 10000);
   };
 
   const startBlinking = () => {
-    // if blinking got called again, clear the previous interval
-    if (blinkIntervalRef.current) {
-      clearInterval(blinkIntervalRef.current);
-    }
-
-    blinkIntervalRef.current = setInterval(() => {
-      setActiveWalk((walk) => !walk);
-    }, 500);
+    blinkTimerRef.current = setTimeout(() => {
+      blinkIntervalRef.current = setInterval(() => {
+        setIsBlinking((b) => !b);
+      }, 500);
+    }, 5000);
   };
 
-  console.log({ activeWalk, pedestrianWaiting, activeLight });
   return (
     <div className={styles.container}>
       <div className={styles.lightContainer}>
@@ -134,13 +126,12 @@ function App() {
             } ${styles[color as LightColor]}`}
           ></div>
         ))}
-        <div className={`${styles.light} ${activeWalk ? styles.active : ""}`}>
-          hi
-        </div>
-        <button
-          className={styles.button}
-          onClick={() => setPedestrianWaiting(true)}
-        >
+        <div
+          className={`${styles.light} ${
+            mode === "walking" && !isBlinking ? styles.active : ""
+          }`}
+        />
+        <button className={styles.button} onClick={() => setMode("pending")}>
           Pedestrian Button
         </button>
       </div>
