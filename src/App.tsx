@@ -41,31 +41,15 @@ function App() {
 
   useEffect(() => {
     if (mode === "walking") return;
-    if (mode === "pending") {
-      if (activeLight === "red") {
-        startWalking();
-      } else if (activeLight === "yellow") {
-        const timer = setTimeout(() => {
-          setActiveLight("red");
-          console.log("yellow finish");
-        }, lights[activeLight].duration);
-        return () => {
-          clearTimeout(timer);
-        };
-      } else if (activeLight === "green") {
-        const timer = setTimeout(() => {
-          setActiveLight("yellow");
-        }, lights[activeLight].duration);
-        return () => {
-          clearTimeout(timer);
-        };
-      }
-    } else {
+    if (mode === "pending" && activeLight === "red") {
+      startWalking();
+      return;
+    }
+    if (mode === "normal" || mode === "pending") {
       // normal light cycle
       const timer = setInterval(() => {
         setActiveLight((light) => lights[light].next);
       }, lights[activeLight].duration);
-
       return () => {
         clearInterval(timer);
       };
@@ -78,7 +62,6 @@ function App() {
       clearAllTimers();
     };
   }, []);
-
   const clearAllTimers = () => {
     // clear time out before it got called again
     if (walkTimerRef.current) {
@@ -100,10 +83,10 @@ function App() {
     startBlinking();
 
     walkTimerRef.current = setTimeout(() => {
-      setMode("normal");
-      setActiveLight("green");
       setIsBlinking(false);
       clearAllTimers();
+      setMode("normal");
+      setActiveLight("green");
     }, 10000);
   };
 
